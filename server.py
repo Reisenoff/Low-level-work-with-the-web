@@ -1,12 +1,25 @@
 import socket
 import threading
 import os
+import time
+from datetime import datetime
 
 # Рабочая директория сервера
 WEB_ROOT = './web_root'
 
 # HTTP-заголовок ответа
-HTTP_HEADER = 'HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n'
+SERVER_NAME = "SimplePythonServer/0.1"
+
+def get_http_header(content_length, content_type="text/html"):
+    date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+    return f"""HTTP/1.1 200 OK
+Date: {date}
+Content-Type: {content_type}
+Server: {SERVER_NAME}
+Content-Length: {content_length}
+Connection: close
+
+"""
 
 # Создание рабочей директории и файлов
 os.makedirs(WEB_ROOT, exist_ok=True)
@@ -36,10 +49,14 @@ def handle_client_connection(conn, addr):
         if os.path.exists(file_path) and os.path.isfile(file_path):
             with open(file_path, 'r') as f:
                 response_body = f.read()
+            content_length = len(response_body)
+            response_header = get_http_header(content_length)
         else:
             response_body = '<H1>404 Not Found</H1>'
+            content_length = len(response_body)
+            response_header = get_http_header(content_length)
         
-        response = HTTP_HEADER + response_body
+        response = response_header + response_body
         conn.send(response.encode())
     except Exception as e:
         print("Error:", e)
@@ -53,7 +70,7 @@ def start_server():
     except OSError:
         sock.bind(('', 8080))
     sock.listen(5)
-    print("Server started on port 80")
+    print("Server started on port 80 or 8080")
     
     while True:
         conn, addr = sock.accept()
